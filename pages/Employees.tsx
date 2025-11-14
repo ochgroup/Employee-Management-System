@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../App';
 import { Employee } from '../types';
@@ -172,7 +173,7 @@ const EmployeeForm: React.FC<{
 
 
 const Employees: React.FC = () => {
-    const { employees, setEmployees, companyInfo, displayCurrency } = useAppContext();
+    const { employees, setEmployees, companyInfo, displayCurrency, signup } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -222,6 +223,15 @@ const Employees: React.FC = () => {
                 avatar: formData.avatar || `https://i.pravatar.cc/150?u=${formData.username}`,
             } as Employee;
             setEmployees([newEmployee, ...employees]);
+            
+            // Automatically create a user account for login
+            if (newEmployee.email && newEmployee.password) {
+                signup(
+                    `${newEmployee.firstName} ${newEmployee.lastName}`,
+                    newEmployee.email,
+                    newEmployee.password
+                );
+            }
         }
         setIsModalOpen(false);
     };

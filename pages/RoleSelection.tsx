@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../App';
 import { Role } from '../types';
-import { SettingsIcon, UserCircleIcon, OfficeBuildingIcon } from '../components/icons/Icons';
+import { UserCircleIcon, UsersIcon, CheckIcon } from '../components/icons/Icons';
 
 const RoleSelection: React.FC = () => {
     const navigate = useNavigate();
@@ -17,41 +17,48 @@ const RoleSelection: React.FC = () => {
         description: string;
         icon: React.ReactNode;
         onClick: () => void;
-    }> = ({ title, description, icon, onClick }) => (
+        iconBg: string;
+        iconColor: string;
+    }> = ({ title, description, icon, onClick, iconBg, iconColor }) => (
         <div
             onClick={onClick}
-            className="group w-full sm:w-72 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-8 text-center cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg hover:border-primary-500 dark:hover:border-primary-500 hover:-translate-y-2"
+            className="group w-full sm:w-80 bg-slate-800 rounded-2xl border border-slate-700 p-8 text-center cursor-pointer transition-all duration-300 hover:border-primary-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary-900/20"
         >
-            <div className="mx-auto w-16 h-16 mb-6 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center transition-colors group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50">
-                {icon}
+            <div className={`mx-auto w-20 h-20 mb-6 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 ${iconBg}`}>
+                <div className={iconColor}>
+                    {icon}
+                </div>
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-2">{title}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
+            <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
         </div>
     );
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 p-4">
-            <div className="text-center mb-12">
-                {companyInfo.logo ? (
-                    <img src={companyInfo.logo} alt="Company Logo" className="w-20 h-20 mx-auto mb-4 object-contain" />
-                ) : (
-                    <OfficeBuildingIcon className="w-20 h-20 mx-auto mb-4 text-primary-500" />
-                )}
-                <h1 className="text-4xl font-bold text-slate-900 dark:text-white">{companyInfo.name}</h1>
-                <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">Welcome! Please select your role to continue.</p>
+        <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-6">
+            <div className="text-center mb-12 animate-fade-in-up">
+                <div className="w-16 h-16 bg-primary-600 rounded-xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-primary-900/50 rotate-3">
+                    <CheckIcon className="w-8 h-8 text-white" strokeWidth={3} />
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3 tracking-tight">STUDIO SEVEN SDN BHD</h1>
+                <p className="text-slate-400 text-lg">Welcome! Please select your role to continue.</p>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+            
+            <div className="flex flex-col md:flex-row gap-6 justify-center w-full max-w-4xl">
                 <RoleCard
-                    title="Admin team"
+                    title="Admin Team"
                     description="Manage employees, payroll, and company settings."
-                    icon={<SettingsIcon className="w-8 h-8 text-slate-500 dark:text-slate-400 transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400" />}
+                    icon={<UserCircleIcon className="w-10 h-10" />}
+                    iconBg="bg-indigo-900/50"
+                    iconColor="text-indigo-400"
                     onClick={() => handleRoleSelection(Role.Admin)}
                 />
                 <RoleCard
                     title="Employee User"
-                    description="Access your profile, leave requests, and salary slips."
-                    icon={<UserCircleIcon className="w-8 h-8 text-slate-500 dark:text-slate-400 transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400" />}
+                    description="Access profile, leave requests, and salary slips."
+                    icon={<UsersIcon className="w-10 h-10" />}
+                    iconBg="bg-primary-900/50"
+                    iconColor="text-primary-400"
                     onClick={() => handleRoleSelection(Role.User)}
                 />
             </div>
