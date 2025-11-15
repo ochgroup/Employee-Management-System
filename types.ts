@@ -1,3 +1,4 @@
+
 export enum Role {
     Admin = 'Admin',
     User = 'User',
@@ -41,6 +42,7 @@ export interface Employee {
     experience: number;
     avatar: string;
     status: 'Active' | 'Inactive' | 'Pending';
+    salaryProfileId?: number;
 }
 
 export interface Department {
@@ -65,6 +67,16 @@ export interface Payroll {
     // Earnings
     basicSalary: number;
     overtime: number;
+    salaryProfileId?: number;
+    earnings?: {
+        monday: number;
+        tuesday: number;
+        wednesday: number;
+        thursday: number;
+        friday: number;
+        saturday: number;
+        sunday: number;
+    };
     // Deductions
     advanced: number;
     offDay: number;
@@ -104,4 +116,35 @@ export interface Resignation {
     lastWorkingDay: string;
     reason: string;
     status: 'Pending' | 'Approved' | 'Rejected';
+}
+
+export interface Levy {
+    id: number;
+    name: string;
+    percentage: number;
+    description: string;
+}
+
+export interface EmployeeLevy {
+    id: number;
+    employeeId: number;
+    levyId?: number; // Optional reference to Levy definition
+    month: number;
+    year: number;
+    amount: number;
+    status: 'Pending' | 'Paid';
+}
+
+export interface SalaryProfile {
+    id: number;
+    name: string;
+    rates: {
+        monday: number;
+        tuesday: number;
+        wednesday: number;
+        thursday: number;
+        friday: number;
+        saturday: number;
+        sunday: number;
+    };
 }

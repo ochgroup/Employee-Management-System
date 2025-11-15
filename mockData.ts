@@ -1,5 +1,5 @@
 
-import { Role, User, Employee, Department, LeaveRequest, Payroll, Attendance, Announcement, CompanyInfo, Advanced, Resignation } from './types';
+import { Role, User, Employee, Department, LeaveRequest, Payroll, Attendance, Announcement, CompanyInfo, Advanced, Resignation, Levy, SalaryProfile, EmployeeLevy } from './types';
 
 export const mockUsers: User[] = [
     { id: 1, name: 'Admin User', email: 'admin@s7.com', password: 'password', role: Role.Admin, avatar: 'https://i.pravatar.cc/150?u=admin' },
@@ -45,6 +45,31 @@ export const mockAdvanced: Advanced[] = [
 
 export const mockResignations: Resignation[] = [
     { id: 1, employeeId: 5, resignationDate: '2024-07-15', lastWorkingDay: '2024-08-15', reason: 'Found a new opportunity', status: 'Approved' },
+];
+
+export const mockLevies: Levy[] = [
+    { id: 1, name: 'Federal Tax', percentage: 5, description: 'Standard federal tax deduction' },
+    { id: 2, name: 'Social Security', percentage: 2, description: 'Contribution to social security' },
+];
+
+export const mockEmployeeLevies: EmployeeLevy[] = [
+    { id: 1, employeeId: 2, levyId: 1, month: 7, year: 2024, amount: 85, status: 'Paid' }
+];
+
+export const mockSalaryProfiles: SalaryProfile[] = [
+    {
+        id: 1,
+        name: 'Standard Rate',
+        rates: {
+            monday: 100,
+            tuesday: 100,
+            wednesday: 100,
+            thursday: 100,
+            friday: 100,
+            saturday: 150,
+            sunday: 200
+        }
+    }
 ];
 
 export const mockCompanyInfo: CompanyInfo = {

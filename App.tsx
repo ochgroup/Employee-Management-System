@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext, useContext, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
@@ -17,8 +18,10 @@ import ForgotPassword from './pages/ForgotPassword';
 import RoleSelection from './pages/RoleSelection';
 import Advanced from './pages/Advanced';
 import Resignation from './pages/Resignation';
-import { User, Role, CompanyInfo, Currency, Resignation as ResignationType } from './types';
-import { mockUsers, mockEmployees, mockDepartments, mockLeaveRequests, mockPayroll, mockAttendance, mockAnnouncements, mockCompanyInfo, mockAdvanced, mockResignations } from './mockData';
+import SalaryProfiles from './pages/SalaryProfiles';
+import EmployeesLevy from './pages/EmployeesLevy';
+import { User, Role, CompanyInfo, Currency, Resignation as ResignationType, Levy, SalaryProfile, EmployeeLevy } from './types';
+import { mockUsers, mockEmployees, mockDepartments, mockLeaveRequests, mockPayroll, mockAttendance, mockAnnouncements, mockCompanyInfo, mockAdvanced, mockResignations, mockLevies, mockSalaryProfiles, mockEmployeeLevies } from './mockData';
 
 type Theme = 'light' | 'dark';
 
@@ -39,6 +42,9 @@ interface AppContextType {
   announcements: typeof mockAnnouncements;
   advanced: typeof mockAdvanced;
   resignations: typeof mockResignations;
+  levies: typeof mockLevies;
+  salaryProfiles: typeof mockSalaryProfiles;
+  employeeLevies: typeof mockEmployeeLevies;
   setEmployees: React.Dispatch<React.SetStateAction<typeof mockEmployees>>;
   setDepartments: React.Dispatch<React.SetStateAction<typeof mockDepartments>>;
   setLeaveRequests: React.Dispatch<React.SetStateAction<typeof mockLeaveRequests>>;
@@ -47,6 +53,9 @@ interface AppContextType {
   setAnnouncements: React.Dispatch<React.SetStateAction<typeof mockAnnouncements>>;
   setAdvanced: React.Dispatch<React.SetStateAction<typeof mockAdvanced>>;
   setResignations: React.Dispatch<React.SetStateAction<typeof mockResignations>>;
+  setLevies: React.Dispatch<React.SetStateAction<typeof mockLevies>>;
+  setSalaryProfiles: React.Dispatch<React.SetStateAction<typeof mockSalaryProfiles>>;
+  setEmployeeLevies: React.Dispatch<React.SetStateAction<typeof mockEmployeeLevies>>;
   companyInfo: CompanyInfo;
   updateCompanyInfo: (data: CompanyInfo) => void;
   displayCurrency: Currency;
@@ -87,6 +96,9 @@ const App: React.FC = () => {
   const [announcements, setAnnouncements] = useState(() => getInitialState('announcements', mockAnnouncements));
   const [advanced, setAdvanced] = useState(() => getInitialState('advanced', mockAdvanced));
   const [resignations, setResignations] = useState(() => getInitialState('resignations', mockResignations));
+  const [levies, setLevies] = useState(() => getInitialState('levies', mockLevies));
+  const [salaryProfiles, setSalaryProfiles] = useState(() => getInitialState('salaryProfiles', mockSalaryProfiles));
+  const [employeeLevies, setEmployeeLevies] = useState(() => getInitialState('employeeLevies', mockEmployeeLevies));
   const [companyInfo, setCompanyInfo] = useState(() => getInitialState('companyInfo', mockCompanyInfo));
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(() => getInitialState('displayCurrency', 'USD'));
   
@@ -111,6 +123,9 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('announcements', JSON.stringify(announcements)); }, [announcements]);
   useEffect(() => { localStorage.setItem('advanced', JSON.stringify(advanced)); }, [advanced]);
   useEffect(() => { localStorage.setItem('resignations', JSON.stringify(resignations)); }, [resignations]);
+  useEffect(() => { localStorage.setItem('levies', JSON.stringify(levies)); }, [levies]);
+  useEffect(() => { localStorage.setItem('salaryProfiles', JSON.stringify(salaryProfiles)); }, [salaryProfiles]);
+  useEffect(() => { localStorage.setItem('employeeLevies', JSON.stringify(employeeLevies)); }, [employeeLevies]);
   useEffect(() => { localStorage.setItem('companyInfo', JSON.stringify(companyInfo)); }, [companyInfo]);
   useEffect(() => { localStorage.setItem('displayCurrency', JSON.stringify(displayCurrency)); }, [displayCurrency]);
 
@@ -183,6 +198,9 @@ const App: React.FC = () => {
     announcements,
     advanced,
     resignations,
+    levies,
+    salaryProfiles,
+    employeeLevies,
     setEmployees,
     setDepartments,
     setLeaveRequests,
@@ -191,11 +209,14 @@ const App: React.FC = () => {
     setAnnouncements,
     setAdvanced,
     setResignations,
+    setLevies,
+    setSalaryProfiles,
+    setEmployeeLevies,
     companyInfo,
     updateCompanyInfo,
     displayCurrency,
     setDisplayCurrency
-  }), [theme, user, employees, departments, leaveRequests, payroll, attendance, announcements, users, companyInfo, displayCurrency, advanced, resignations]);
+  }), [theme, user, employees, departments, leaveRequests, payroll, attendance, announcements, users, companyInfo, displayCurrency, advanced, resignations, levies, salaryProfiles, employeeLevies]);
 
   return (
     <AppContext.Provider value={appContextValue}>
@@ -215,6 +236,8 @@ const App: React.FC = () => {
               <Route path="profile" element={<Profile />} />
               <Route path="resignation" element={<Resignation />} />
               {user.role === Role.Admin && <Route path="advanced" element={<Advanced />} />}
+              {user.role === Role.Admin && <Route path="salary-profiles" element={<SalaryProfiles />} />}
+              {user.role === Role.Admin && <Route path="employees-levy" element={<EmployeesLevy />} />}
               {user.role === Role.Admin && <Route path="settings" element={<Settings />} />}
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Route>

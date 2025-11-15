@@ -4,8 +4,8 @@ import { useAppContext } from '../App';
 import { Role } from '../types';
 import {
   DashboardIcon, UsersIcon, DepartmentIcon, LeaveIcon, PayrollIcon,
-  AttendanceIcon, AnnouncementIcon, UserCircleIcon, XIcon, OfficeBuildingIcon, SettingsIcon,
-  CashIcon, LogoutIcon
+  AttendanceIcon, AnnouncementIcon, UserCircleIcon, XIcon, SettingsIcon,
+  CashIcon, LogoutIcon, DocumentTextIcon, ScaleIcon
 } from './icons/Icons';
 
 interface SidebarProps {
@@ -21,7 +21,9 @@ const commonLinks = [
 
 const adminLinks = [
   { to: '/employees', icon: UsersIcon, label: 'Employees' },
+  { to: '/salary-profiles', icon: DocumentTextIcon, label: 'Salary Profiles' },
   { to: '/departments', icon: DepartmentIcon, label: 'Departments' },
+  { to: '/employees-levy', icon: ScaleIcon, label: 'Employees Levy' },
   { to: '/leave', icon: LeaveIcon, label: 'Leave Requests' },
   { to: '/resignation', icon: LogoutIcon, label: 'Staff Resignation' },
   { to: '/payroll', icon: PayrollIcon, label: 'Payroll' },
@@ -31,7 +33,7 @@ const adminLinks = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setSidebarOpen }) => {
-  const { user, companyInfo } = useAppContext();
+  const { user, companyInfo, logout } = useAppContext();
   
   const userNavLinks = [
     commonLinks[0], // Dashboard
@@ -51,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setSidebarOpen }) => {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-slate-900 border-r border-slate-800">
-      <div className="p-6">
+      <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
         <div className="flex items-center mb-8 px-2">
             <h1 className="text-xl font-bold text-primary-500 tracking-wider uppercase">
                 {companyInfo.name.split(' ')[0]} <span className="text-white">SEVEN</span>
@@ -77,6 +79,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setSidebarOpen }) => {
             </NavLink>
           ))}
         </nav>
+      </div>
+      <div className="p-4 border-t border-slate-800">
+        <button
+            onClick={() => {
+                logout();
+                setSidebarOpen(false);
+            }}
+            className="flex items-center w-full px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-all duration-200"
+        >
+            <LogoutIcon className="w-5 h-5 mr-3" />
+            <span className="font-medium">Logout</span>
+        </button>
       </div>
     </div>
   );

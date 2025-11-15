@@ -1,0 +1,240 @@
+
+import React, { useState } from 'react';
+import { useAppContext } from '../App';
+import { EmployeeLevy, Employee } from '../types';
+import Modal from '../components/Modal';
+import { PencilIcon, TrashIcon, CheckIcon, XIcon } from '../components/icons/Icons';
+import { formatCurrency } from '../utils/currency';
+
+const EmployeeLevyForm: React.FC<{
+    record: EmployeeLevy | null;
+    onSave: (data: Omit<EmployeeLevy, 'id'> & { id?: number }) => void;
+    onClose: () => void;
+}> = ({ record, onSave, onClose }) => {
+    const { employees, levies, companyInfo } = useAppContext();
+    
+    // Defaults
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+
+    const [formData, setFormData] = useState({
+        employeeId: record?.employeeId || employees[0]?.id || 0,
+        levyId: record?.levyId || levies[0]?.id || 0,
+        month: record?.month || currentMonth,
+        year: record?.year || currentYear,
+        amount: record?.amount || 0,
+        status: record?.status || 'Pending' as 'Pending' | 'Paid'
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target;
+        setFormData(prev => ({
+             ...prev, 
+             [name]: type === 'number' ? parseFloat(value) : value 
+        }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave({ ...formData, id: record?.id });
+    };
+
+    const inputClass = "mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm";
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label htmlFor="employeeId" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Employee</label>
+                <select name="employeeId" value={formData.employeeId} onChange={handleChange} className={inputClass} required disabled={!!record}>
+                    {employees.map(e => <option key={e.id} value={e.id}>{e.firstName} {e.lastName}</option>)}
+                </select>
+            </div>
+            <div>
+                <label htmlFor="levyId" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Levy Type</label>
+                 <select name="levyId" value={formData.levyId} onChange={handleChange} className={inputClass} required>
+                    <option value={0}>Select Levy Type...</option>
+                    {levies.map(l => <option key={l.id} value={l.id}>{l.name} ({l.percentage}%)</option>)}
+                </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="month" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Month</label>
+                    <select name="month" value={formData.month} onChange={handleChange} className={inputClass} required>
+                        {monthNames.map((name, index) => <option key={index} value={index+1}>{name}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="year" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Year</label>
+                    <input type="number" name="year" value={formData.year} onChange={handleChange} className={inputClass} required />
+                </div>
+            </div>
+            <div>
+                <label htmlFor="amount" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Pay Amount ({companyInfo.baseCurrency})</label>
+                <input type="number" name="amount" value={formData.amount} onChange={handleChange} className={inputClass} min="0" step="0.01" required />
+            </div>
+             <div>
+                <label htmlFor="status" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Status</label>
+                <select name="status" value={formData.status} onChange={handleChange} className={inputClass} required>
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                </select>
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+                <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">Save</button>
+            </div>
+        </form>
+    );
+};
+
+const EmployeesLevy: React.FC = () => {
+    const { employeeLevies, setEmployeeLevies, employees, companyInfo, displayCurrency } = useAppContext();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState<EmployeeLevy | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [recordToDelete, setRecordToDelete] = useState<EmployeeLevy | null>(null);
+
+    const getEmployee = (id: number) => employees.find(e => e.id === id);
+    const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const handleAdd = () => {
+        setSelectedRecord(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEdit = (record: EmployeeLevy) => {
+        setSelectedRecord(record);
+        setIsModalOpen(true);
+    };
+
+    const handleDelete = (record: EmployeeLevy) => {
+        setRecordToDelete(record);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (recordToDelete) {
+            setEmployeeLevies(employeeLevies.filter(l => l.id !== recordToDelete.id));
+            setIsDeleteModalOpen(false);
+            setRecordToDelete(null);
+        }
+    };
+
+    const handleSave = (data: Omit<EmployeeLevy, 'id'> & { id?: number }) => {
+        if (data.id) {
+            setEmployeeLevies(employeeLevies.map(l => l.id === data.id ? { ...l, ...data } as EmployeeLevy : l));
+        } else {
+            const newRecord: EmployeeLevy = {
+                ...data,
+                id: Date.now(),
+            };
+            setEmployeeLevies([newRecord, ...employeeLevies]);
+        }
+        setIsModalOpen(false);
+    };
+    
+    const handleStatusChange = (id: number, status: 'Pending' | 'Paid') => {
+        setEmployeeLevies(employeeLevies.map(r => r.id === id ? { ...r, status } : r));
+    };
+
+    const StatusBadge: React.FC<{ status: 'Pending' | 'Paid' }> = ({ status }) => {
+        const baseClasses = "px-2 py-1 text-xs font-semibold rounded-full";
+        switch (status) {
+            case 'Paid':
+                return <span className={`${baseClasses} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300`}>Paid</span>;
+            default:
+                return <span className={`${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300`}>Pending</span>;
+        }
+    };
+
+    return (
+        <>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700">
+                <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Employees Levy</h2>
+                    <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Add Employee Levy
+                    </button>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
+                        <thead className="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-700 dark:text-slate-400">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Employee</th>
+                                <th scope="col" className="px-6 py-3">Department</th>
+                                <th scope="col" className="px-6 py-3">Pay Period</th>
+                                <th scope="col" className="px-6 py-3">Pay</th>
+                                <th scope="col" className="px-6 py-3">Status</th>
+                                <th scope="col" className="px-6 py-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {employeeLevies.length > 0 ? employeeLevies.map((record) => {
+                                const employee = getEmployee(record.employeeId);
+                                return (
+                                    <tr key={record.id} className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
+                                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                            {employee ? (
+                                                <div className="flex items-center">
+                                                    <img className="w-8 h-8 rounded-full mr-2" src={employee.avatar} alt="Avatar" />
+                                                    <div>
+                                                        <div className="font-medium">{employee.firstName} {employee.lastName}</div>
+                                                        <div className="text-xs text-slate-500">{employee.email}</div>
+                                                    </div>
+                                                </div>
+                                            ) : 'Unknown'}
+                                        </td>
+                                        <td className="px-6 py-4">{employee?.department || 'N/A'}</td>
+                                        <td className="px-6 py-4">{monthNames[record.month]} {record.year}</td>
+                                        <td className="px-6 py-4 font-semibold">{formatCurrency(record.amount, companyInfo.baseCurrency, displayCurrency)}</td>
+                                        <td className="px-6 py-4">
+                                            <StatusBadge status={record.status} />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center space-x-2">
+                                                {record.status === 'Pending' && (
+                                                    <button onClick={() => handleStatusChange(record.id, 'Paid')} className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300" title="Mark as Paid">
+                                                        <CheckIcon className="w-5 h-5" />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => handleEdit(record)} className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300" title="Edit">
+                                                    <PencilIcon className="w-5 h-5"/>
+                                                </button>
+                                                <button onClick={() => handleDelete(record)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                                                    <TrashIcon className="w-5 h-5"/>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            }) : (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No employee levy records found.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedRecord ? 'Edit Employee Levy' : 'Add Employee Levy'}>
+                <EmployeeLevyForm record={selectedRecord} onSave={handleSave} onClose={() => setIsModalOpen(false)} />
+            </Modal>
+
+            <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirm Deletion">
+                <div className="text-slate-900 dark:text-white">
+                    <p className="mb-4">
+                        Are you sure you want to delete this levy record? This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end space-x-2">
+                        <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500">Cancel</button>
+                        <button onClick={handleConfirmDelete} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Delete</button>
+                    </div>
+                </div>
+            </Modal>
+        </>
+    );
+};
+
+export default EmployeesLevy;

@@ -11,7 +11,7 @@ const EmployeeForm: React.FC<{
     onSave: (employeeData: Partial<Employee>) => void;
     onClose: () => void;
 }> = ({ employee, onSave, onClose }) => {
-    const { departments, companyInfo } = useAppContext();
+    const { departments, companyInfo, salaryProfiles } = useAppContext();
     const [formData, setFormData] = useState({
         username: '',
         firstName: '',
@@ -23,6 +23,7 @@ const EmployeeForm: React.FC<{
         experience: 0,
         avatar: '',
         status: 'Pending' as Employee['status'],
+        salaryProfileId: undefined as number | undefined,
         ...employee
     });
     const [password, setPassword] = useState('');
@@ -77,7 +78,11 @@ const EmployeeForm: React.FC<{
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
-        setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) : value }));
+        if (name === 'salaryProfileId') {
+            setFormData(prev => ({ ...prev, [name]: value ? Number(value) : undefined }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) : value }));
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -147,6 +152,15 @@ const EmployeeForm: React.FC<{
                     <input type="number" name="salary" value={formData.salary} onChange={handleChange} className={inputClass} required />
                 </div>
                 <div>
+                    <label htmlFor="salaryProfileId" className="block text-sm font-medium">Salary Profile</label>
+                    <select name="salaryProfileId" value={formData.salaryProfileId ?? ''} onChange={handleChange} className={inputClass}>
+                        <option value="">Select Profile (Optional)</option>
+                        {salaryProfiles.map(profile => (
+                            <option key={profile.id} value={profile.id}>{profile.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
                     <label htmlFor="birthday" className="block text-sm font-medium">Birthday</label>
                     <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} className={inputClass} required />
                 </div>
@@ -173,7 +187,7 @@ const EmployeeForm: React.FC<{
 
 
 const Employees: React.FC = () => {
-    const { employees, setEmployees, companyInfo, displayCurrency, signup } = useAppContext();
+    const { employees, setEmployees, companyInfo, displayCurrency, signup, salaryProfiles } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -237,9 +251,13 @@ const Employees: React.FC = () => {
     };
 
     const handleExportCSV = () => {
-        const headers = ['ID', 'Username', 'First Name', 'Last Name', 'Email', 'Department', `Salary (${companyInfo.baseCurrency})`, 'Birthday', 'Experience (years)', 'Status'];
+        const headers = ['ID', 'Username', 'First Name', 'Last Name', 'Email', 'Department', `Salary (${companyInfo.baseCurrency})`, 'Salary Profile', 'Birthday', 'Experience (years)', 'Status'];
         
         const csvRows = filteredEmployees.map(emp => {
+            const profileName = emp.salaryProfileId 
+                ? salaryProfiles.find(p => p.id === emp.salaryProfileId)?.name || 'Unknown' 
+                : 'Annual Salary';
+            
             const row = [
                 emp.id,
                 emp.username,
@@ -248,6 +266,7 @@ const Employees: React.FC = () => {
                 emp.email,
                 emp.department,
                 emp.salary,
+                profileName,
                 emp.birthday,
                 emp.experience,
                 emp.status
@@ -315,6 +334,7 @@ const Employees: React.FC = () => {
                                 <th scope="col" className="px-6 py-3">Department</th>
                                 <th scope="col" className="px-6 py-3">Experience</th>
                                 <th scope="col" className="px-6 py-3">Salary</th>
+                                <th scope="col" className="px-6 py-3">Salary Profile</th>
                                 <th scope="col" className="px-6 py-3">Status</th>
                                 <th scope="col" className="px-6 py-3">Action</th>
                             </tr>
@@ -335,6 +355,17 @@ const Employees: React.FC = () => {
                                     <td className="px-6 py-4">{employee.department}</td>
                                     <td className="px-6 py-4">{employee.experience} years</td>
                                     <td className="px-6 py-4">{formatCurrency(employee.salary, companyInfo.baseCurrency, displayCurrency)}</td>
+                                    <td className="px-6 py-4">
+                                        {employee.salaryProfileId ? (
+                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                                {salaryProfiles.find(p => p.id === employee.salaryProfileId)?.name || 'Unknown'}
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                                Annual Salary
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4">
                                         <StatusBadge status={employee.status} />
                                     </td>
