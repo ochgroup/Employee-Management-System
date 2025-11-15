@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../App';
 import { Resignation as ResignationType, Role, Employee } from '../types';
-import { CheckIcon, XIcon, PencilIcon, TrashIcon, SearchIcon } from '../components/icons/Icons';
+import { CheckIcon, XIcon, PencilIcon, TrashIcon, SearchIcon, DownloadIcon } from '../components/icons/Icons';
 import Modal from '../components/Modal';
 
 const ResignationForm: React.FC<{
@@ -136,6 +136,32 @@ const Resignation: React.FC = () => {
         setResignations(resignations.map(r => r.id === id ? { ...r, status } : r));
     };
 
+    const handleExportCSV = () => {
+        const headers = ['Employee Name', 'Resignation Date', 'Last Working Day', 'Reason', 'Status'];
+        
+        const csvRows = filteredResignations.map(r => {
+            const row = [
+                getEmployeeName(r.employeeId),
+                r.resignationDate,
+                r.lastWorkingDay,
+                r.reason,
+                r.status
+            ];
+            return row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',');
+        });
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'resignations.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const StatusBadge: React.FC<{ status: 'Pending' | 'Approved' | 'Rejected' }> = ({ status }) => {
         const baseClasses = "px-2 py-1 text-xs font-semibold rounded-full";
         switch (status) {
@@ -166,6 +192,10 @@ const Resignation: React.FC = () => {
                                 <SearchIcon className="h-5 w-5 text-slate-400" />
                             </div>
                         </div>
+                        <button onClick={handleExportCSV} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center space-x-2">
+                            <DownloadIcon className="w-5 h-5" />
+                            <span>Export to CSV</span>
+                        </button>
                         <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                             {user?.role === Role.Admin ? 'Add Staff Resignation' : 'Submit Staff Resignation'}
                         </button>

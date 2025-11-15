@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../App';
 import { EmployeeLevy, Employee } from '../types';
 import Modal from '../components/Modal';
-import { PencilIcon, TrashIcon, CheckIcon, XIcon, SearchIcon } from '../components/icons/Icons';
+import { PencilIcon, TrashIcon, CheckIcon, XIcon, SearchIcon, DownloadIcon } from '../components/icons/Icons';
 import { formatCurrency } from '../utils/currency';
 
 const EmployeeLevyForm: React.FC<{
@@ -95,7 +95,7 @@ const EmployeeLevyForm: React.FC<{
 };
 
 const EmployeesLevy: React.FC = () => {
-    const { employeeLevies, setEmployeeLevies, employees, companyInfo, displayCurrency } = useAppContext();
+    const { employeeLevies, setEmployeeLevies, employees, companyInfo, displayCurrency, levies } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState<EmployeeLevy | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -159,6 +159,37 @@ const EmployeesLevy: React.FC = () => {
         setEmployeeLevies(employeeLevies.map(r => r.id === id ? { ...r, status } : r));
     };
 
+    const handleExportCSV = () => {
+        const headers = ['Employee Name', 'Department', 'Levy Type', 'Month', 'Year', `Amount (${companyInfo.baseCurrency})`, 'Status'];
+        
+        const csvRows = filteredLevies.map(record => {
+            const employee = getEmployee(record.employeeId);
+            const levy = levies.find(l => l.id === record.levyId);
+            
+            const row = [
+                employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown',
+                employee?.department || 'N/A',
+                levy ? levy.name : 'Unknown',
+                monthNames[record.month],
+                record.year,
+                record.amount,
+                record.status
+            ];
+            return row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',');
+        });
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'employee_levies.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const StatusBadge: React.FC<{ status: 'Pending' | 'Paid' }> = ({ status }) => {
         const baseClasses = "px-2 py-1 text-xs font-semibold rounded-full";
         switch (status) {
@@ -187,6 +218,10 @@ const EmployeesLevy: React.FC = () => {
                                 <SearchIcon className="h-5 w-5 text-slate-400" />
                             </div>
                         </div>
+                        <button onClick={handleExportCSV} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center space-x-2">
+                            <DownloadIcon className="w-5 h-5" />
+                            <span>Export to CSV</span>
+                        </button>
                         <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                             Add Employee Levy
                         </button>

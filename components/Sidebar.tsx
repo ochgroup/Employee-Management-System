@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAppContext } from '../App';
@@ -65,7 +66,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setSidebarOpen }) => {
               <XIcon className="w-6 h-6" />
             </button>
         </div>
-        <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Menu</p>
         <nav>
           {links.map(({ to, icon: Icon, label }) => (
             <NavLink
