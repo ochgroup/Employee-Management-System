@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../App';
 import { Resignation as ResignationType, Role, Employee } from '../types';
-import { CheckIcon, XIcon, PencilIcon, TrashIcon } from '../components/icons/Icons';
+import { CheckIcon, XIcon, PencilIcon, TrashIcon, SearchIcon } from '../components/icons/Icons';
 import Modal from '../components/Modal';
 
 const ResignationForm: React.FC<{
@@ -69,20 +70,27 @@ const Resignation: React.FC = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedResignation, setSelectedResignation] = useState<ResignationType | null>(null);
     const [resignationToDelete, setResignationToDelete] = useState<ResignationType | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const currentEmployee = useMemo(() =>
         employees.find(emp => emp.email === user?.email),
         [employees, user]
     );
 
-    const displayedResignations = user?.role === Role.Admin
-        ? resignations
-        : resignations.filter(req => req.employeeId === currentEmployee?.id);
-
     const getEmployeeName = (employeeId: number) => {
         const employee = employees.find(e => e.id === employeeId);
         return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
     };
+
+    const filteredResignations = (user?.role === Role.Admin
+        ? resignations
+        : resignations.filter(req => req.employeeId === currentEmployee?.id)
+    ).filter(r => {
+        const name = getEmployeeName(r.employeeId).toLowerCase();
+        const reason = r.reason.toLowerCase();
+        const query = searchQuery.toLowerCase();
+        return name.includes(query) || reason.includes(query);
+    });
 
     const handleAdd = () => {
         setSelectedResignation(null);
@@ -143,11 +151,25 @@ const Resignation: React.FC = () => {
     return (
         <>
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700">
-                <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-4">
                     <h2 className="text-xl font-semibold">Staff Resignation</h2>
-                    <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
-                        {user?.role === Role.Admin ? 'Add Staff Resignation' : 'Submit Staff Resignation'}
-                    </button>
+                    <div className="flex items-center space-x-2 flex-wrap gap-2">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 pr-4 py-2 w-full sm:w-64 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <SearchIcon className="h-5 w-5 text-slate-400" />
+                            </div>
+                        </div>
+                        <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            {user?.role === Role.Admin ? 'Add Staff Resignation' : 'Submit Staff Resignation'}
+                        </button>
+                    </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
@@ -162,35 +184,43 @@ const Resignation: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {displayedResignations.map((r) => (
-                                <tr key={r.id} className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
-                                    {user?.role === Role.Admin && 
-                                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap">
-                                            {getEmployeeName(r.employeeId)}
-                                        </td>
-                                    }
-                                    <td className="px-6 py-4">{r.resignationDate}</td>
-                                    <td className="px-6 py-4">{r.lastWorkingDay}</td>
-                                    <td className="px-6 py-4">{r.reason}</td>
-                                    <td className="px-6 py-4"><StatusBadge status={r.status} /></td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center space-x-2">
-                                            {user?.role === Role.Admin && r.status === 'Pending' && (
-                                                <>
-                                                    <button onClick={() => handleStatusChange(r.id, 'Approved')} className="text-green-600 hover:text-green-900" title="Approve"><CheckIcon className="w-5 h-5" /></button>
-                                                    <button onClick={() => handleStatusChange(r.id, 'Rejected')} className="text-red-600 hover:text-red-900" title="Reject"><XIcon className="w-5 h-5" /></button>
-                                                </>
-                                            )}
+                            {filteredResignations.length > 0 ? (
+                                filteredResignations.map((r) => (
+                                    <tr key={r.id} className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
+                                        {user?.role === Role.Admin && 
+                                            <td className="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap">
+                                                {getEmployeeName(r.employeeId)}
+                                            </td>
+                                        }
+                                        <td className="px-6 py-4">{r.resignationDate}</td>
+                                        <td className="px-6 py-4">{r.lastWorkingDay}</td>
+                                        <td className="px-6 py-4">{r.reason}</td>
+                                        <td className="px-6 py-4"><StatusBadge status={r.status} /></td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center space-x-2">
+                                                {user?.role === Role.Admin && r.status === 'Pending' && (
+                                                    <>
+                                                        <button onClick={() => handleStatusChange(r.id, 'Approved')} className="text-green-600 hover:text-green-900" title="Approve"><CheckIcon className="w-5 h-5" /></button>
+                                                        <button onClick={() => handleStatusChange(r.id, 'Rejected')} className="text-red-600 hover:text-red-900" title="Reject"><XIcon className="w-5 h-5" /></button>
+                                                    </>
+                                                )}
 
-                                            {(user?.role === Role.Admin || r.status === 'Pending') && (
-                                                <button onClick={() => handleEdit(r)} className="text-primary-600 hover:text-primary-900" title="Edit"><PencilIcon className="w-5 h-5"/></button>
-                                            )}
-                                            
-                                            <button onClick={() => handleDelete(r)} className="text-red-600 hover:text-red-900" title="Delete"><TrashIcon className="w-5 h-5"/></button>
-                                        </div>
+                                                {(user?.role === Role.Admin || r.status === 'Pending') && (
+                                                    <button onClick={() => handleEdit(r)} className="text-primary-600 hover:text-primary-900" title="Edit"><PencilIcon className="w-5 h-5"/></button>
+                                                )}
+                                                
+                                                <button onClick={() => handleDelete(r)} className="text-red-600 hover:text-red-900" title="Delete"><TrashIcon className="w-5 h-5"/></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={user?.role === Role.Admin ? 6 : 5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                                        No resignation records found.
                                     </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>

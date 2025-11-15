@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../App';
 import { EmployeeLevy, Employee } from '../types';
 import Modal from '../components/Modal';
-import { PencilIcon, TrashIcon, CheckIcon, XIcon } from '../components/icons/Icons';
+import { PencilIcon, TrashIcon, CheckIcon, XIcon, SearchIcon } from '../components/icons/Icons';
 import { formatCurrency } from '../utils/currency';
 
 const EmployeeLevyForm: React.FC<{
@@ -17,26 +17,32 @@ const EmployeeLevyForm: React.FC<{
     const currentMonth = new Date().getMonth() + 1;
     const currentYear = new Date().getFullYear();
 
+    // Use string for amount to handle decimal input comfortably
     const [formData, setFormData] = useState({
         employeeId: record?.employeeId || employees[0]?.id || 0,
         levyId: record?.levyId || levies[0]?.id || 0,
         month: record?.month || currentMonth,
         year: record?.year || currentYear,
-        amount: record?.amount || 0,
+        amount: record?.amount !== undefined ? record.amount.toString() : '',
         status: record?.status || 'Pending' as 'Pending' | 'Paid'
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target;
-        setFormData(prev => ({
-             ...prev, 
-             [name]: type === 'number' ? parseFloat(value) : value 
-        }));
+        const { name, value } = e.target;
+        if (['employeeId', 'levyId', 'month', 'year'].includes(name)) {
+             setFormData(prev => ({ ...prev, [name]: Number(value) }));
+        } else {
+             setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ ...formData, id: record?.id });
+        onSave({ 
+            ...formData, 
+            amount: parseFloat(formData.amount) || 0,
+            id: record?.id 
+        });
     };
 
     const inputClass = "mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm";
@@ -94,9 +100,24 @@ const EmployeesLevy: React.FC = () => {
     const [selectedRecord, setSelectedRecord] = useState<EmployeeLevy | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [recordToDelete, setRecordToDelete] = useState<EmployeeLevy | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const getEmployee = (id: number) => employees.find(e => e.id === id);
     const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const filteredLevies = employeeLevies.filter(record => {
+        const employee = getEmployee(record.employeeId);
+        if (!employee) return false;
+        
+        const query = searchQuery.toLowerCase();
+        const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
+        
+        return (
+            fullName.includes(query) || 
+            employee.email.toLowerCase().includes(query) ||
+            employee.department.toLowerCase().includes(query)
+        );
+    });
 
     const handleAdd = () => {
         setSelectedRecord(null);
@@ -151,11 +172,25 @@ const EmployeesLevy: React.FC = () => {
     return (
         <>
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700">
-                <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-4">
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Employees Levy</h2>
-                    <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        Add Employee Levy
-                    </button>
+                    <div className="flex items-center space-x-2 flex-wrap gap-2">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search employee..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 pr-4 py-2 w-full sm:w-64 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <SearchIcon className="h-5 w-5 text-slate-400" />
+                            </div>
+                        </div>
+                        <button onClick={handleAdd} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            Add Employee Levy
+                        </button>
+                    </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
@@ -170,7 +205,7 @@ const EmployeesLevy: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {employeeLevies.length > 0 ? employeeLevies.map((record) => {
+                            {filteredLevies.length > 0 ? filteredLevies.map((record) => {
                                 const employee = getEmployee(record.employeeId);
                                 return (
                                     <tr key={record.id} className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">

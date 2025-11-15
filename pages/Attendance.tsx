@@ -1,8 +1,9 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../App';
 import { Attendance as AttendanceType, Role, User, Employee } from '../types';
 import Modal from '../components/Modal';
-import { DownloadIcon, PencilIcon, TrashIcon } from '../components/icons/Icons';
+import { DownloadIcon, PencilIcon, TrashIcon, SearchIcon } from '../components/icons/Icons';
 
 const AttendanceForm: React.FC<{
     attendanceRecord: AttendanceType | null;
@@ -93,6 +94,7 @@ const Attendance: React.FC = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedAttendance, setSelectedAttendance] = useState<AttendanceType | null>(null);
     const [attendanceToDelete, setAttendanceToDelete] = useState<AttendanceType | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const currentEmployee = useMemo(() => // FIX: Look up employee by email for consistency and reliability
         employees.find(emp => emp.email === user?.email),
@@ -107,6 +109,13 @@ const Attendance: React.FC = () => {
         const employee = employees.find(e => e.id === employeeId);
         return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
     };
+
+    const filteredAttendance = displayedAttendance.filter(a => {
+        const query = searchQuery.toLowerCase();
+        const employeeName = getEmployeeName(a.employeeId).toLowerCase();
+        const date = a.date;
+        return employeeName.includes(query) || date.includes(query);
+    });
     
     const handleAdd = () => {
         setSelectedAttendance(null);
@@ -153,7 +162,7 @@ const Attendance: React.FC = () => {
     const handleExportCSV = () => {
         const headers = ['Employee ID', 'Employee Name', 'Date', 'Clock In', 'Clock Out', 'Over Time'];
         
-        const csvRows = displayedAttendance.map(att => {
+        const csvRows = filteredAttendance.map(att => {
             const row = [
                 att.employeeId,
                 getEmployeeName(att.employeeId),
@@ -182,7 +191,19 @@ const Attendance: React.FC = () => {
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700">
                 <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2">
                     <h2 className="text-xl font-semibold">Attendance Management</h2>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-wrap gap-2">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 pr-4 py-2 w-full sm:w-64 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <SearchIcon className="h-5 w-5 text-slate-400" />
+                            </div>
+                        </div>
                          <button onClick={handleExportCSV} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center space-x-2">
                             <DownloadIcon className="w-5 h-5" />
                             <span>Export to CSV</span>
@@ -205,7 +226,7 @@ const Attendance: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {displayedAttendance.map((a: AttendanceType) => (
+                            {filteredAttendance.length > 0 ? filteredAttendance.map((a: AttendanceType) => (
                                 <tr key={a.id} className="bg-white dark:bg-slate-800 border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
                                     {user?.role === Role.Admin && (
                                         <td className="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap">
@@ -229,7 +250,13 @@ const Attendance: React.FC = () => {
                                         </td>
                                     )}
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr>
+                                    <td colSpan={user?.role === Role.Admin ? 6 : 5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                                        No attendance records found.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
